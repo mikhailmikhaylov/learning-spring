@@ -9,20 +9,21 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 @RestController
-class ImageController {
+class ApiController {
 
-    @GetMapping("/api/images") fun images(): Flux<Image> = Flux.just(
+    @GetMapping("$API_BASE_PATH/images") fun images(): Flux<Image> = Flux.just(
             Image("1", "1.jpg"),
             Image("2", "2.jpg"),
             Image("3", "3.jpg")
     )
 
-    @PostMapping("/api/images") fun create(@RequestBody images: Flux<Image>): Mono<Void> = images
+    @PostMapping("$API_BASE_PATH/images") fun create(@RequestBody images: Flux<Image>): Mono<Void> = images
             .doOnNext { log.info("Saving ${it.name} (not actually, lol)") }
             .then()
 
 
     companion object {
-        val log = LoggerFactory.getLogger(ImageController::class.java)!!
+        val log = LoggerFactory.getLogger(ApiController::class.java)!!
+        const val API_BASE_PATH = "/api"
     }
 }
