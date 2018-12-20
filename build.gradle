@@ -50,7 +50,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-devtools")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation('org.synchronoss.cloud:nio-multipart-parser:1.1.0') // TODO:mmykhailov: Check if this dependency is necessary
-    compileOnly('org.projectlombok:lombok') // TODO:mmykhailov: Check if kotlin's data classes work the same as lombok's classes (especially for mongo)
+//    compileOnly('org.projectlombok:lombok') // TODO:mmykhailov: Check if kotlin's data classes work the same as lombok's classes (especially for mongo)
     testImplementation('org.springframework.boot:spring-boot-starter-test')
     testImplementation('io.projectreactor:reactor-test')
 }
