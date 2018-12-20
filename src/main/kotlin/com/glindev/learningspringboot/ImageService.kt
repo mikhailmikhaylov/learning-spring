@@ -16,8 +16,12 @@ import java.io.IOException
 import java.lang.RuntimeException
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.*
 
-@Service class ImageService(private val resourceLoader: ResourceLoader) {
+@Service class ImageService(
+        private val resourceLoader: ResourceLoader,
+        private val imageRepository: ImageRepository
+) {
 
     @Bean fun setUp() = CommandLineRunner {
         FileSystemUtils.deleteRecursively(File(UPLOAD_ROOT))
@@ -27,32 +31,43 @@ import java.nio.file.Paths
         FileCopyUtils.copy("Test file3", FileWriter("$UPLOAD_ROOT/icon.jpg"))
     }
 
-    fun findAllImages(): Flux<Image> {
-        // TODO:mmykhailov: This is definitely the bad way to do it. Rewrite the reactive way later.
-        return try {
-            Flux.fromIterable(Files.newDirectoryStream(Paths.get(UPLOAD_ROOT)))
-                    .map { Image(it.hashCode().toString(), it.fileName.toString()) }
-        } catch (e: IOException) {
-            Flux.empty()
-        }
-    }
+    fun findAllImages() = imageRepository.findAll()
 
     fun findOneImage(fileName: String): Mono<Resource> {
         return Mono.fromSupplier { resourceLoader.getResource("file:$UPLOAD_ROOT/$fileName") }
     }
 
     fun createImage(files: Flux<FilePart>): Mono<Void> {
-        return files.flatMap { it.transferTo(Paths.get(UPLOAD_ROOT, it.filename()).toFile()) }.then()
+        return files.flatMap { file ->
+            val saveDatabaseImage = imageRepository.save(Image(UUID.randomUUID().toString(), file.filename()))
+            val copyFile = Mono.just(Paths.get(UPLOAD_ROOT, file.filename()).toFile())
+                    .log("createImage-picktarget")
+                    .map { destFile ->
+                        try {
+                            destFile.createNewFile()
+                            return@map destFile
+                        } catch (e: IOException) {
+                            throw RuntimeException(e)
+                        }
+                    }
+                    .log("createImage-newfile")
+                    .flatMap(file::transferTo)
+                    .log("createImage-copy")
+
+            return@flatMap Mono.`when`(saveDatabaseImage, copyFile)
+        }.then()
     }
 
     fun deleteImage(fileName: String): Mono<Void> {
-        return Mono.fromRunnable {
+        val deleteDatabaseImage = imageRepository.findByName(fileName).flatMap(imageRepository::delete)
+        val deleteFile = Mono.fromRunnable<Void> {
             try {
                 Files.deleteIfExists(Paths.get(UPLOAD_ROOT, fileName))
             } catch (e: IOException) {
                 throw RuntimeException(e)
             }
         }
+        return Mono.`when`(deleteDatabaseImage, deleteFile).then()
     }
 
     companion object {
