@@ -53,4 +53,5 @@ dependencies {
 //    compileOnly('org.projectlombok:lombok') // TODO:mmykhailov: Check if kotlin's data classes work the same as lombok's classes (especially for mongo)
     testImplementation('org.springframework.boot:spring-boot-starter-test')
     testImplementation('io.projectreactor:reactor-test')
+    testImplementation('de.flapdoodle.embed:de.flapdoodle.embed.mongo')
 }
