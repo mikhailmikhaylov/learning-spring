@@ -34,4 +34,14 @@ class EmbeddedImageRepositoryTests {
                     assertThat(it).extracting<String>(Image::name).contains("1.jpg", "2.jpg", "3.jpg")
                 }.expectComplete().verify()
     }
+
+    @Test fun findByNameShouldWork() {
+        val image = repository.findByName("3.jpg")
+        StepVerifier.create(image)
+                .expectNextMatches {
+                    assertThat(it.name).isEqualTo("3.jpg")
+                    assertThat(it.id).isEqualTo("3")
+                    return@expectNextMatches true
+                }.expectComplete().verify()
+    }
 }
